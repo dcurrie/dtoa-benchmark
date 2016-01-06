@@ -16,6 +16,8 @@
 #include "test.h"
 #include "double-conversion/double-conversion.h"
 #include "emyg/emyg_atod.h"
+#include "emyg/emyg_dtoa.h"
+extern "C" double strtod(const char *s00, char **se); // gay/dtoa.c
 
 const unsigned kVerifyRandomCount = 100000;
 const unsigned kIterationForRandom = 100;
@@ -358,6 +360,53 @@ void BenchAll() {
 	fclose(fp);
 }
 
+double dblc_strtod (const char *buffer, char **ep) {
+	using namespace double_conversion;
+	StringToDoubleConverter converter(StringToDoubleConverter::ALLOW_TRAILING_JUNK, 0.0, 0.0, NULL, NULL);
+	int processed = 0;
+	*ep = (char *)buffer;
+	return converter.StringToDouble(buffer, 256, &processed);
+}
+
+void BenchAtod(double (*f)(const char *, char **), const char *name) {
+	printf("Benchmarking atod %-20s ... ", name);
+
+	char buffer[256];
+	double minDuration = std::numeric_limits<double>::max();
+	double maxDuration = 0.0;
+
+	for (int digit = 1; digit <= RandomDigitData::kMaxDigit; digit++) {
+		double* data = RandomDigitData::GetData(digit);
+		size_t n = RandomDigitData::kCount;
+		char* end;
+
+		double duration = std::numeric_limits<double>::max();
+		for (unsigned trial = 0; trial < kTrial; trial++) {
+			Timer timer;
+			timer.Start();
+
+			for (unsigned iteration = 0; iteration < kIterationPerDigit; iteration++) {
+				for (size_t i = 0; i < n; i++) {
+					emyg_dtoa(data[i], buffer);
+					//if (trial == 0 && iteration == 0 && i == 0)
+					//	printf("%.17g -> %s\n", data[i], buffer);
+					double roundtrip = f(buffer, &end);
+					if (roundtrip != data[i]) 
+						printf("Error: roundtrip fail %.17g -> '%s' -> %.17g\n", data[i], buffer, roundtrip);
+				}
+			}
+
+			timer.Stop();
+			duration = std::min(duration, timer.GetElapsedMilliseconds());
+		}
+
+		duration *= 1e6 / (kIterationPerDigit * n); // convert to nano second per operation
+		minDuration = std::min(minDuration, duration);
+		maxDuration = std::max(maxDuration, duration);
+	}
+	printf("[%8.3fns, %8.3fns]\n", minDuration, maxDuration);
+}
+
 int main() {
 	// sort tests
 	TestList& tests = TestManager::Instance().GetTests();
@@ -365,4 +414,8 @@ int main() {
 
 	VerifyAll();
 	BenchAll();
+
+	BenchAtod(dblc_strtod, (const char *)"dblc");
+	BenchAtod(emyg_strtod, (const char *)"emyg");
+	BenchAtod(     strtod, (const char *)"dgay");
 }

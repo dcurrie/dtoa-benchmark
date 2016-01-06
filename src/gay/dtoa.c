@@ -1,4 +1,27 @@
-#define IEEE_8087
+/* Exactly one of IEEE_8087, IEEE_MC68k, VAX, or IBM should be defined */
+
+#if defined(__x86_64__) || defined(_M_X64)
+    /* x86 64-bit ----------------------------------------------- */
+    #define IEEE_8087 1
+#elif defined(__i386) || defined(_M_IX86)
+    /* x86 32-bit ----------------------------------------------- */
+    #define IEEE_8087 1
+#endif
+
+#ifdef IEEE_8087
+#undef IEEE_MC68k
+#undef VAX
+#undef IBM
+#endif
+
+#include <stdint.h>
+
+#define Long int32_t /* 32-bit long is expected by dtoa.c */
+#define ULong uint32_t
+
+#define NO_ERRNO /* we don't use it */
+
+#define PRIVATE_MEM (7400) /* this is expected to prevent all mallocs by dtoa */
 
 /****************************************************************
  *
