@@ -15,6 +15,7 @@
 #include "timer.h"
 #include "test.h"
 #include "double-conversion/double-conversion.h"
+#include "emyg/emyg_atod.h"
 
 const unsigned kVerifyRandomCount = 100000;
 const unsigned kIterationForRandom = 100;
@@ -54,6 +55,18 @@ static size_t VerifyValue(double value, void(*f)(double, char*), const char* exp
 	StringToDoubleConverter converter(StringToDoubleConverter::ALLOW_TRAILING_JUNK, 0.0, 0.0, NULL, NULL);
 	int processed = 0;
 	double roundtrip = converter.StringToDouble(buffer, 1024, &processed);
+
+	char* end;
+	double roundtrip_e = emyg_strtod(buffer, &end);
+	int processed_e = int(end - buffer);
+
+	if (processed != processed_e) {
+		printf("Error: dc and emyg differ processsed: %d %d '%s'\n", processed, processed_e, buffer);
+	}
+	if (roundtrip != roundtrip_e) {
+		printf("Error: dc and emyg differ value: %.17g %.17g '%s' %a %a\n"
+			, roundtrip, roundtrip_e, buffer, roundtrip, roundtrip_e);
+	}
 #endif
 
 	size_t len = strlen(buffer);
