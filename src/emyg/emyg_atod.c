@@ -56,8 +56,8 @@
 
 #define OPTIMIZE_FOR_ATOD
 
-#define BIGNUM_JUMBO_SIZE_UINT32   (28) /* 896 bits > (64 + 54 + (log (expt 5 325) 2) = 873) */
-#define BIGNUM_NORMAL_SIZE_UINT32  (26) /* when we don't need the extra space for multiply */
+#define BIGNUM_JUMBO_SIZE_UINT32   (30) /* 960 bits > (64 + 54 + (log (expt 5 345) 2) = 919) */
+#define BIGNUM_NORMAL_SIZE_UINT32  (28) /* when we don't need the extra space for multiply */
 #define BIGNUM_QUOTIENT_SIZE_UINT32 (4) /* difference twixt dividend - divisor; see m - n + 1 */
 
 static const int doubleMantissaBits = 53;
